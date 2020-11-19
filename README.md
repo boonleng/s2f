@@ -1,5 +1,5 @@
 # S2F
 
-BTC S2F Model
+S2F Model
 
-Fitting BTC price history to a model.
+Data fitting through a regression model. Will use BTC historical price for illustration.
