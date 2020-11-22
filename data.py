@@ -1,0 +1,62 @@
+import os
+import csv
+import datetime
+import numpy as np
+import pandas as pd
+
+def history_from_csv(filename, startrow=0):
+    data = []
+    header = []
+    with open(filename) as file:
+        reader = csv.reader(file, delimiter=',')
+        for _ in range(startrow):
+            next(reader)
+        for k, row in enumerate(reader):
+            if k > 0:
+                data.append(row)
+            else:
+                header = row
+    data = np.array(data)
+    return data, header
+
+def str2datetime(x):
+    return [datetime.datetime.strptime(n, '%Y-%m-%d %H:%M:%S').replace(hour=0, minute=0, second=0, microsecond=0) for n in x]
+
+'''
+    History of Price, Transaction, and Circulating Coins from CSV Files
+    
+    - Data points are very sparse, so we will resample them in weeks by default
+    - This can be changed to months by using rss = 'M'
+'''
+def read(rss='W-Mon'):
+    filename = 'btc-price.csv'
+    x, _ = history_from_csv(filename)
+    d = str2datetime(x[:, 0])
+    p = [float(n) for n in x[:, 1]]
+    pp = pd.DataFrame({'Price':p}, index=d)
+    wp = pp.resample(rss).last()
+
+    filename = 'btc-trns.csv'
+    x, _ = history_from_csv(filename)
+    d = str2datetime(x[:, 0])
+    t = [int(n) for n in x[:, 1]]
+    tt = pd.DataFrame({'Transactions':t}, index=d)
+    wt = tt.resample(rss).mean()
+
+    filename = 'btc-stock.csv'
+    x, _ = history_from_csv(filename)
+    d = str2datetime(x[:, 0])
+    s = [float(n) for n in x[:, 1]]
+    ss = pd.DataFrame({'Stock':s}, index=d)
+    ws = ss.resample(rss).last().interpolate()
+
+    z = float(np.mean(np.diff(ws.index)) / 86400e9)
+    f = np.concatenate(([s[0], ], np.diff(np.array(s))))
+    ff = pd.DataFrame({'Mean Flow':f}, index=d)
+    wf = ff.resample(rss).mean().interpolate()        
+    wf['Norm Mean Flow'] = wf.values[:, -1] * 365.25
+    wf['Tab Flow'] = np.concatenate((ws.values[0], np.diff(ws.values[:, 0])))
+    wf['Norm Tab Flow'] = wf.values[:, -1] * 365.25 / z
+
+    df = pd.concat([wp, wt, ws, wf], axis=1, join='inner')
+    return df

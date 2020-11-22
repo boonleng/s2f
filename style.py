@@ -14,11 +14,12 @@ import matplotlib.pyplot
 from cycler import cycler
 
 context_properties = {
-    'figure.figsize': (8, 3.5),
+    'figure.figsize': (8, 4.5),
     'figure.dpi': 144,
     'font.family': 'serif',
     'font.serif': ['Arial'],
     'font.sans-serif': ['System Font', 'Verdana', 'Arial'],
+    'axes.axisbelow': True,
     'axes.linewidth': 1.0,
     'axes.titlepad': 12.0,
     'figure.titlesize': 'x-large',
@@ -28,12 +29,12 @@ context_properties = {
     'xtick.major.width': 1.0,
     'ytick.direction': 'in',
     'ytick.major.pad': 7.5,
-    'grid.linewidth': 0.5
+    'grid.linewidth': 0.5,
 }
 white = (0.85, 0.85, 0.85)
 dark_context_properties = {
     'figure.facecolor': (0.0, 0.0, 0.0, 0.0),
-    'axes.facecolor': (0.2, 0.21, 0.23, 0.9),
+    'axes.facecolor': (0.2, 0.2, 0.2, 0.75),
     'axes.edgecolor': white,
     'axes.labelcolor': white,
     'axes.prop_cycle': cycler('color', [
