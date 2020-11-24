@@ -58,5 +58,12 @@ def read(rss='W-Mon'):
     wf['Tab Flow'] = np.concatenate((ws.values[0], np.diff(ws.values[:, 0])))
     wf['Norm Tab Flow'] = wf.values[:, -1] * 365.25 / z
 
+    # days left in the sampling period
+    x = wf.index[-1] - d[-1]
+    x = x.total_seconds() / 86400
+    # Adjust the last flow to compensate for the remaining days left in the month
+    # print(x, z, z / (z - x))
+    wf['Norm Tab Flow'].values[-1] *= z / (z - x)
+
     df = pd.concat([wp, wt, ws, wf], axis=1, join='inner')
     return df
