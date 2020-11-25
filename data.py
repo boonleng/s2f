@@ -29,20 +29,17 @@ def str2datetime(x):
     - This can be changed to months by using rss = 'M'
 '''
 def read(rss='W-Mon'):
-    filename = 'btc-price.csv'
-    x, _ = history_from_csv(filename)
-    d = str2datetime(x[:, 0])
-    p = [float(n) for n in x[:, 1]]
-    pp = pd.DataFrame({'Price':p}, index=d)
-    wp = pp.resample(rss).last()
+    def valuesFromCSV(key, filename):
+        x, _ = history_from_csv(filename)
+        d = str2datetime(x[:, 0])
+        v = [float(n) for n in x[:, 1]]
+        vv = pd.DataFrame({key:v}, index=d)
+        return vv
 
-    filename = 'btc-trns.csv'
-    x, _ = history_from_csv(filename)
-    d = str2datetime(x[:, 0])
-    t = [int(n) for n in x[:, 1]]
-    tt = pd.DataFrame({'Transactions':t}, index=d)
-    wt = tt.resample(rss).mean()
-
+    wp = valuesFromCSV('Price', 'btc-price.csv').resample(rss).last()
+    wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
+    wt = valuesFromCSV('Transactions', 'btc-trns.csv').resample(rss).mean()
+    
     filename = 'btc-stock.csv'
     x, _ = history_from_csv(filename)
     d = str2datetime(x[:, 0])
@@ -65,5 +62,5 @@ def read(rss='W-Mon'):
     # print(x, z, z / (z - x))
     wf['Norm Tab Flow'].values[-1] *= z / (z - x)
 
-    df = pd.concat([wp, wt, ws, wf], axis=1, join='inner')
+    df = pd.concat([wp, wc, wt, ws, wf], axis=1, join='inner')
     return df
