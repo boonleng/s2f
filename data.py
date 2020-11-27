@@ -36,11 +36,14 @@ def read(rss='W-Mon'):
         vv = pd.DataFrame({key:v}, index=d)
         return vv
 
-    wp = valuesFromCSV('Price', 'btc-price.csv').resample(rss).last()
-    wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
-    wt = valuesFromCSV('Transactions', 'btc-trns.csv').resample(rss).mean()
+    # wp = valuesFromCSV('Price', 'btc-price.csv').resample(rss).last()
+    # wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
+    # wt = valuesFromCSV('Transactions', 'btc-trns.csv').resample(rss).mean()
     
-    filename = 'btc-stock.csv'
+    # wp = valuesFromCSV('btc-total-bitcoins.csv').resample(rss).last()
+    wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
+    
+    filename = 'btc-total-bitcoins.csv'
     x, _ = history_from_csv(filename)
     d = str2datetime(x[:, 0])
     s = [float(n) for n in x[:, 1]]
@@ -62,5 +65,5 @@ def read(rss='W-Mon'):
     # print(x, z, z / (z - x))
     wf['Norm Tab Flow'].values[-1] *= z / (z - x)
 
-    df = pd.concat([wp, wc, wt, ws, wf], axis=1, join='inner')
+    df = pd.concat([wc, ws, wf], axis=1, join='inner')
     return df
