@@ -39,8 +39,9 @@ def read(rss='W-Mon'):
     # wp = valuesFromCSV('Price', 'btc-price.csv').resample(rss).last()
     # wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
     # wt = valuesFromCSV('Transactions', 'btc-trns.csv').resample(rss).mean()
-    
     # wp = valuesFromCSV('btc-total-bitcoins.csv').resample(rss).last()
+    
+    # wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).mean()
     wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
     
     filename = 'btc-total-bitcoins.csv'
@@ -48,6 +49,7 @@ def read(rss='W-Mon'):
     d = str2datetime(x[:, 0])
     s = [float(n) for n in x[:, 1]]
     ss = pd.DataFrame({'Stock':s}, index=d)
+    # ws = ss.resample(rss).mean().interpolate()
     ws = ss.resample(rss).last().interpolate()
 
     z = float(np.mean(np.diff(ws.index)) / 86400e9)
