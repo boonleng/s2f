@@ -54,8 +54,8 @@ import style
 
 def grab(args, timeout=10):
     browser = webdriver.Safari()
-    browser.set_window_size(1200, 1200)
-    browser.implicitly_wait(10)
+    browser.set_window_size(1600, 1400)
+    browser.implicitly_wait(15)
 
     for url, destination in (
         ('https://www.blockchain.com/charts/total-bitcoins', 'btc-total-bitcoins.csv'),
@@ -64,7 +64,9 @@ def grab(args, timeout=10):
             print('Visiting {}'.format(url))
         browser.get(url)
         WebDriverWait(browser, timeout).until(
-            EC.visibility_of_element_located((By.CLASS_NAME, 'vx-group')))       
+            EC.visibility_of_element_located((By.CLASS_NAME, 'visx-group')))       
+        if args.verbose:
+            print('Graph area loaded')
         button = browser.find_element_by_xpath('//button[text()="All Time"]')
         if button is None:
             print('Unable to find the All Time button')
@@ -123,34 +125,34 @@ def imgen(args):
         print('Reading CSV data ...')
 
     df = data.read(rss='M')
-    with pd.option_context('display.max_rows', 6):
-        print(df)
+    if args.verbose:
+        with pd.option_context('display.max_rows', 6):
+            print(df)
+            print('')
 
     d = df.index                       # Date
     s = df['Stock'].values             # Stock
     f = df['Norm Mean Flow'].values    # Normalized Mean Flow
     f2 = df['Norm Tab Flow'].values    # Normalized Flow from table entries (matches better with PlanB's monthly data)
     mc = df['Market Cap'].values       # Market Capitalization (USD)
-
     s2f = s / f                        # Stock-to-Flow Ratio
     s2f2 = s / f2                      # Stock-to-Flow Ratio from table entries
-
     hh = [
         0,
         df.index.get_loc(pd.to_datetime('2012-11-28'), method='nearest'),
         df.index.get_loc(pd.to_datetime('2016-07-09'), method='nearest'),
         df.index.get_loc(pd.to_datetime('2020-05-11'), method='nearest'),
     ]
-
     ii = np.sum(mc == 0)
 
-    # Up to month 135
-    ix = np.expand_dims(np.log10(s2f2[ii:136]), 1)
-    iy = np.log10(mc[ii:136])
+    # Start when market cap > 0, up to month 135
+    # ix = np.expand_dims(np.log10(s2f2[ii:136]), 1)
+    # iy = np.log10(mc[ii:136])
+    ix = np.expand_dims(np.log10(s2f2[ii:]), 1)
+    iy = np.log10(mc[ii:])
 
     if args.verbose:
-        print('Fitting data ...')
-
+        print('Data fitting ...')
     linreg = LinearRegression().fit(ix, iy)
     ransac = RANSACRegressor().fit(ix, iy)
 
