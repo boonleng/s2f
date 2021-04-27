@@ -42,9 +42,9 @@ def read(rss='W-Mon'):
     # wp = valuesFromCSV('btc-total-bitcoins.csv').resample(rss).last()
     
     # wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).mean()
-    wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
+    wc = valuesFromCSV('Market Cap', 'blob/btc-market-cap.csv').resample(rss).last()
     
-    filename = 'btc-total-bitcoins.csv'
+    filename = 'blob/btc-total-bitcoins.csv'
     x, _ = history_from_csv(filename)
     d = str2datetime(x[:, 0])
     s = [float(n) for n in x[:, 1]]

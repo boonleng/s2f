@@ -14,15 +14,19 @@ Boonleng
 
   Updates:
 
+  1.0.1   - 4/27/2021
+          - Bug fixes and cosmetics
+
   1.0     - 1/1/2021
           - Started
 '''
 
 import sys
 
-MIN_PYTHON = (3, 8, 4)
-if sys.version_info < MIN_PYTHON:
-    sys.exit('Python %s or later is required.\n' % '.'.join("%s" % n for n in MIN_PYTHON))
+__min_python__ = (3, 8, 4)
+if sys.version_info < __min_python__:
+    version_str = '.'.join(str(k) for k in __min_python__)
+    sys.exit('Python {} or later is required.\n'.format(version_str))
 
 import os
 import csv
@@ -56,10 +60,9 @@ def grab(args, timeout=10):
     browser = webdriver.Safari()
     browser.set_window_size(1600, 1400)
     browser.implicitly_wait(15)
-
     for url, destination in (
-        ('https://www.blockchain.com/charts/total-bitcoins', 'btc-total-bitcoins.csv'),
-        ('https://www.blockchain.com/charts/market-cap', 'btc-market-cap.csv')):
+        ('https://www.blockchain.com/charts/market-cap', 'btc-market-cap.csv'),
+        ('https://www.blockchain.com/charts/total-bitcoins', 'btc-total-bitcoins.csv')):
         if args.verbose:
             print('Visiting {}'.format(url))
         browser.get(url)
@@ -67,12 +70,14 @@ def grab(args, timeout=10):
             EC.visibility_of_element_located((By.CLASS_NAME, 'visx-group')))       
         if args.verbose:
             print('Graph area loaded')
-        button = browser.find_element_by_xpath('//button[text()="All Time"]')
-        if button is None:
+        try:
+            button = browser.find_element_by_xpath('//button[text()="All Time"]')
+        except selenium.common.exceptions.NoSuchElementException:
             print('Unable to find the All Time button')
             return
-        graph = browser.find_element_by_xpath('//*[name()="path" and contains(@d, "M100")]')
-        if graph is None:
+        try:
+            graph = browser.find_element_by_xpath('//*[name()="path" and contains(@d, "M")]')
+        except selenium.common.exceptions.NoSuchElementException:
             print('Unable to find the graph area')
             return
         old = graph.get_attribute('d')
@@ -87,8 +92,6 @@ def grab(args, timeout=10):
             if k % 10 == 0:
                 print('Waiting for graph data ...')
             time.sleep(0.1)
-        if args.verbose:
-            print('Graph updated')
         select = Select(WebDriverWait(browser, timeout).until(
             EC.element_to_be_clickable((By.XPATH, '//*[name()="select"]'))
             ))
@@ -101,7 +104,7 @@ def grab(args, timeout=10):
         print('File downloaded')
         for a in xattr.listxattr(filename):
             xattr.removexattr(filename, a)
-        os.rename(filename, destination)
+        os.rename(filename, 'blob/{}'.format(destination))
 
     browser.quit()
 
@@ -214,7 +217,10 @@ def imgen(args):
 
     #timestr = datetime.date.today().strftime('%Y%m%d')
     timestr = df.index[-1].strftime('%Y%m%d')
-    filename = os.path.expanduser('~/Downloads/s2f-{}.png'.format(timestr))
+    folder = os.path.expanduser('~/Downloads/s2f')
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    filename = '{}/s2f-{}.png'.format(folder, timestr)
     if args.verbose:
         print('Saving image to {} ...'.format(filename))
     fig.savefig(filename, facecolor='k', dpi=320)
