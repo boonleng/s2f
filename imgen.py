@@ -34,8 +34,8 @@ import time
 import xattr
 import argparse
 import textwrap
-import datetime
 
+import selenium
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -71,12 +71,14 @@ def grab(args, timeout=10):
         if args.verbose:
             print('Graph area loaded')
         try:
-            button = browser.find_element_by_xpath('//button[text()="All Time"]')
+            # button = browser.find_element_by_xpath('//button[text()="All Time"]')
+            button = browser.find_element(By.XPATH, '//button[text()="All Time"]')
         except selenium.common.exceptions.NoSuchElementException:
-            print('Unable to find the All Time button')
+            print('Unable to find the "All Time" button')
             return
         try:
-            graph = browser.find_element_by_xpath('//*[name()="path" and contains(@d, "M")]')
+            # graph = browser.find_element_by_xpath('//*[name()="linepath" and contains(@d, "M")]')
+            graph = browser.find_element(By.XPATH, '//*[name()="path" and contains(@class, "visx-linepath") and contains(@d, "M")]')
         except selenium.common.exceptions.NoSuchElementException:
             print('Unable to find the graph area')
             return
@@ -187,7 +189,7 @@ def imgen(args):
         e = len(d) if i == len(hh) - 1 else hh[i + 1]
         x = s2f2[b:e]
         y = mc[b:e]
-        w = np.array(df.index[b:e] - df.index[b], dtype=np.float) / 86400e9 / 365.25 * 12
+        w = np.array(df.index[b:e] - df.index[b], dtype=float) / 86400e9 / 365.25 * 12
         label = 'Genesis' if i == 0 else 'Halving {}'.format(i)
         hs = ax.scatter(x, y, c=w, vmin=0, vmax=48, cmap='rainbow_r', s=3, label=label)
     loc = []
