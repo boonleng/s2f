@@ -130,6 +130,11 @@ def imgen(args):
         print('Reading CSV data ...')
 
     df = data.read(rss='M')
+    if args.end_date:
+        print(f'Clipping data to {args.end_date} ...')
+        ee = pd.to_datetime(args.end_date)
+        ii = df.index.get_loc(ee, method='nearest')
+        df = df[:ii+1]
     if args.verbose:
         with pd.option_context('display.max_rows', 6):
             print(df)
@@ -148,9 +153,9 @@ def imgen(args):
         df.index.get_loc(pd.to_datetime('2016-07-09'), method='nearest'),
         df.index.get_loc(pd.to_datetime('2020-05-11'), method='nearest'),
     ]
-    ii = np.sum(mc == 0)
 
     # Start when market cap > 0, up to month 135
+    ii = np.sum(mc == 0)
     # ix = np.expand_dims(np.log10(s2f2[ii:136]), 1)
     # iy = np.log10(mc[ii:136])
     ix = np.expand_dims(np.log10(s2f2[ii:]), 1)
@@ -243,6 +248,7 @@ if __name__ == "__main__":
         Copyleft 2021 Boonleng Cheong
     ''')
     parser = argparse.ArgumentParser(usage=usage, formatter_class=argparse.RawTextHelpFormatter, epilog=epilog)
+    parser.add_argument('-e', '--end-date', default=None, help='sets the end day')
     parser.add_argument('-d', '--download', action='store_true', default=False, help='downloads new data')
     parser.add_argument('-v', '--verbose', action='count', default=0, help='increases verbosity')
     args = parser.parse_args()
