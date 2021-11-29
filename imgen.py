@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '1.0'
+__version__ = '1.0.2'
 
 '''
 imgen.py
@@ -13,6 +13,9 @@ Boonleng
 @author: Boonleng Cheong
 
   Updates:
+
+  1.0.2   - 11/27/2021
+          - Added option --end-date for a custom end date
 
   1.0.1   - 4/27/2021
           - Bug fixes and cosmetics
