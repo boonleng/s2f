@@ -1,4 +1,3 @@
-import os
 import csv
 import datetime
 import numpy as np
@@ -20,7 +19,15 @@ def history_from_csv(filename, startrow=0):
     return data, header
 
 def str2datetime(x):
-    return [datetime.datetime.strptime(n, '%Y-%m-%d %H:%M:%S').replace(hour=0, minute=0, second=0, microsecond=0) for n in x]
+    # return [datetime.datetime.strptime(n, '%Y-%m-%d %H:%M:%S').replace(hour=0, minute=0, second=0, microsecond=0) for n in x]
+    return [datetime.datetime.strptime(n[:10], '%Y-%m-%d') for n in x]
+
+def valuesFromCSV(key, filename):
+    x, _ = history_from_csv(filename)
+    d = str2datetime(x[:, 0])
+    v = [float(n) for n in x[:, 1]]
+    vv = pd.DataFrame({key:v}, index=d)
+    return vv
 
 '''
     History of Price, Transaction, and Circulating Coins from CSV Files
@@ -29,13 +36,6 @@ def str2datetime(x):
     - This can be changed to months by using rss = 'M'
 '''
 def read(rss='W-Mon'):
-    def valuesFromCSV(key, filename):
-        x, _ = history_from_csv(filename)
-        d = str2datetime(x[:, 0])
-        v = [float(n) for n in x[:, 1]]
-        vv = pd.DataFrame({key:v}, index=d)
-        return vv
-
     # wp = valuesFromCSV('Price', 'btc-price.csv').resample(rss).last()
     # wc = valuesFromCSV('Market Cap', 'btc-market-cap.csv').resample(rss).last()
     # wt = valuesFromCSV('Transactions', 'btc-trns.csv').resample(rss).mean()

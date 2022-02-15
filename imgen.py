@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 '''
 imgen.py
@@ -13,6 +13,9 @@ Boonleng
 @author: Boonleng Cheong
 
   Updates:
+
+  1.0.3   - 2/14/2022
+          - Fixed depecrated API of pandas since 1.4.0
 
   1.0.2   - 11/27/2021
           - Added option --end-date for a custom end date
@@ -32,7 +35,6 @@ if sys.version_info < __min_python__:
     sys.exit('Python {} or later is required.\n'.format(version_str))
 
 import os
-import csv
 import time
 import xattr
 import argparse
@@ -136,7 +138,7 @@ def imgen(args):
     if args.end_date:
         print(f'Clipping data to {args.end_date} ...')
         ee = pd.to_datetime(args.end_date)
-        ii = df.index.get_loc(ee, method='nearest')
+        ii = df.index.get_indexer([ee], method='nearest')[0]
         df = df[:ii+1]
     if args.verbose:
         with pd.option_context('display.max_rows', 6):
@@ -152,9 +154,9 @@ def imgen(args):
     s2f2 = s / f2                      # Stock-to-Flow Ratio from table entries
     hh = [
         0,
-        df.index.get_loc(pd.to_datetime('2012-11-28'), method='nearest'),
-        df.index.get_loc(pd.to_datetime('2016-07-09'), method='nearest'),
-        df.index.get_loc(pd.to_datetime('2020-05-11'), method='nearest'),
+        df.index.get_indexer([pd.to_datetime('2012-11-28')], method='nearest')[0],
+        df.index.get_indexer([pd.to_datetime('2016-07-09')], method='nearest')[0],
+        df.index.get_indexer([pd.to_datetime('2020-05-11')], method='nearest')[0],
     ]
 
     # Start when market cap > 0, up to month 135
@@ -170,8 +172,8 @@ def imgen(args):
     ransac = RANSACRegressor().fit(ix, iy)
 
     mx = np.expand_dims(np.logspace(-1, 2.5), 1)
-    my = 10 ** linreg.predict(np.log10(mx))
-    print('Linear Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(linreg.coef_[0], linreg.intercept_))
+    # my = 10 ** linreg.predict(np.log10(mx))
+    # print('Linear Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(linreg.coef_[0], linreg.intercept_))
 
     my2 = 10 ** ransac.predict(np.log10(mx))
     print('RANSAC Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(ransac.estimator_.coef_[0], ransac.estimator_.intercept_))
@@ -181,6 +183,7 @@ def imgen(args):
     fig = matplotlib.pyplot.figure()
     ax = matplotlib.pyplot.axes([0.22, 0.12, 0.73, 0.76])
     ax.tick_params(axis='y')
+    # ax.plot(mx, my, '-.', linewidth=0.5, color='#FFDD66', zorder=-1)
     ax.plot(mx, my2, '-.', linewidth=0.5, color='#FF66DD', zorder=-1)
     ax.set_xlim((0.1, 250))
     ax.set_ylim((1e4, 100e12))
@@ -235,6 +238,22 @@ def imgen(args):
         print('Saving image to {} ...'.format(filename))
     fig.savefig(filename, facecolor='k', dpi=320)
 
+def show_table(file):
+    values, _ = data.history_from_csv(file)
+    k = 200
+    print(values[k:k+7])
+
+def test(args):
+
+    print('Test')
+    file = 'blob/btc-market-cap-20220212.csv'
+    show_table(file)
+
+    print('')
+
+    file = 'blob/btc-market-cap.csv'
+    show_table(file)
+
 ###
 
 if __name__ == "__main__":
@@ -245,7 +264,8 @@ if __name__ == "__main__":
 
     examples:
 
-        PROG -v    runs in verbose mode
+        PROG -v             runs in verbose mode
+        PROG -e 20211231    generates an image ending 2021/12/31
     '''.replace('PROG', '{}'.format(name))
     epilog = textwrap.dedent('''
         Copyleft 2021 Boonleng Cheong
@@ -253,9 +273,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(usage=usage, formatter_class=argparse.RawTextHelpFormatter, epilog=epilog)
     parser.add_argument('-e', '--end-date', default=None, help='sets the end day')
     parser.add_argument('-d', '--download', action='store_true', default=False, help='downloads new data')
+    parser.add_argument('-t', '--test', action='store_true', default=False, help='runs a test')
     parser.add_argument('-v', '--verbose', action='count', default=0, help='increases verbosity')
     args = parser.parse_args()
 
-    if args.download:
-        grab(args)
-    imgen(args)
+    if args.test:
+        test(args)
+    else:
+        if args.download:
+            grab(args)
+        imgen(args)
