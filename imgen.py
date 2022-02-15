@@ -135,6 +135,7 @@ def imgen(args):
         print('Reading CSV data ...')
 
     df = data.read(rss='M')
+    df = df[:-1]
     if args.end_date:
         print(f'Clipping data to {args.end_date} ...')
         ee = pd.to_datetime(args.end_date)
@@ -241,12 +242,12 @@ def imgen(args):
 def show_table(file):
     values, _ = data.history_from_csv(file)
     k = 200
-    print(values[k:k+7])
+    print(values[k:k+14])
 
 def test(args):
 
     print('Test')
-    file = 'blob/btc-market-cap-20220212.csv'
+    file = 'blob/btc-market-cap-20211102.csv'
     show_table(file)
 
     print('')
