@@ -1,7 +1,10 @@
+import os
 import csv
 import datetime
 import numpy as np
 import pandas as pd
+
+import grab
 
 def history_from_csv(filename, startrow=0):
     data = []
@@ -73,6 +76,10 @@ def read(rss='W-Mon'):
     # Data from https://coinmetrics.io/community-network-data/
     #
     filename = 'blob/btc.csv'
+
+    if not os.path.exists(filename):
+        grab.coinmetrics()
+
     values, header = history_from_csv(filename)
 
     d = str2datetime(values[:, 0])
