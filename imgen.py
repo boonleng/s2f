@@ -44,31 +44,29 @@ import time
 import argparse
 import textwrap
 
-import numpy as np
-import pandas as pd
-import matplotlib
-import matplotlib.pyplot
-import matplotlib.patheffects
-
-from sklearn.linear_model import LinearRegression, RANSACRegressor
-
-import data
-import grab
-import style
-
-np.set_printoptions(precision=1)
-
 df_raw = None
 
 ###
 
-def v2str(v):
-    d = int(np.maximum(-np.log10(v), 0))
-    return ('{{:,.{:d}f}}'.format(d)).format(v)
-
-
 def imgen(args):
+    import numpy as np
+    import pandas as pd
+    import matplotlib
+    import matplotlib.pyplot
+    import matplotlib.patheffects
+
+    from sklearn.linear_model import LinearRegression, RANSACRegressor
+
+    import data
+    import style
+
+    np.set_printoptions(precision=1)
+
     style.use_dark_theme()
+
+    def v2str(v):
+        d = int(np.maximum(-np.log10(v), 0))
+        return ('{{:,.{:d}f}}'.format(d)).format(v)
 
     xfmt = matplotlib.ticker.FuncFormatter(lambda x, pos: v2str(x))
     yfmt = matplotlib.ticker.FuncFormatter(lambda y, pos: '$' + v2str(y))
@@ -235,7 +233,7 @@ if __name__ == "__main__":
         PROG -e 20211231    generates an image ending 2021/12/31
     '''.replace('PROG', name)
     epilog = textwrap.dedent('''
-        Copyleft 2021 Boonleng Cheong
+        Copyleft 2021-2022 Boonleng Cheong
     ''')
     parser = argparse.ArgumentParser(usage=usage, formatter_class=argparse.RawTextHelpFormatter, epilog=epilog)
     parser.add_argument('-c', '--calendar', type=int, default=0, help='produces N calendar year of images')
@@ -243,12 +241,17 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--end-date', default=None, help='sets the end day')
     parser.add_argument('-t', '--test', action='store_true', default=False, help='runs a test')
     parser.add_argument('-v', '--verbose', action='count', default=0, help='increases verbosity')
+    parser.add_argument('--version', action='store_true', help='shows version')
     args = parser.parse_args()
 
     if args.download:
+        import grab
         grab.coinmetrics(verbose=args.verbose)
+
     if args.test:
         test(args)
+    elif args.version:
+        print(__version__)
     else:
         if args.calendar:
             import datetime
