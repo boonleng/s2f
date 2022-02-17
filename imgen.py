@@ -32,6 +32,7 @@ Boonleng
           - Started
 '''
 
+import os
 import sys
 
 __min_python__ = (3, 8, 4)
@@ -39,8 +40,6 @@ if sys.version_info < __min_python__:
     version_str = '.'.join(str(k) for k in __min_python__)
     sys.exit(f'Python {version_str} or later is required.\n')
 
-import os
-import time
 import argparse
 import textwrap
 
@@ -49,6 +48,8 @@ df_raw = None
 ###
 
 def imgen(args):
+    import time
+
     import numpy as np
     import pandas as pd
     import matplotlib
