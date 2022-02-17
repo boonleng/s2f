@@ -14,7 +14,7 @@ Boonleng
 
   Updates:
 
-  1.1     - 2/15/2022
+  1.1     - 2/16/2022
           - Added -c/--calendar option
           - Adjusted locations of halving labels
           - Updated how months after halving is computed
@@ -37,9 +37,10 @@ import sys
 __min_python__ = (3, 8, 4)
 if sys.version_info < __min_python__:
     version_str = '.'.join(str(k) for k in __min_python__)
-    sys.exit('Python {} or later is required.\n'.format(version_str))
+    sys.exit(f'Python {version_str} or later is required.\n')
 
 import os
+import time
 import argparse
 import textwrap
 
@@ -56,6 +57,8 @@ import grab
 import style
 
 np.set_printoptions(precision=1)
+
+df_raw = None
 
 ###
 
@@ -74,20 +77,24 @@ def imgen(args):
     # months = matplotlib.dates.MonthLocator()           # every month
     # years_fmt = matplotlib.dates.DateFormatter('%Y')
 
-    if args.verbose:
-        print('Reading CSV data ...')
-
-    df = data.read(rss='M')
-    df = df[:-1]
-    if args.end_date:
-        print(f'Data to {args.end_date} ...')
-        ee = pd.to_datetime(args.end_date)
-        ii = df.index.get_indexer([ee], method='nearest')[0]
-        df = df[:ii+1]
-    if args.verbose:
+    global df_raw
+    if df_raw is None:
+        if args.verbose:
+            print('Reading CSV data ...')
+        df_raw = data.read(rss='M')
         with pd.option_context('display.max_rows', 6):
-            print(df)
+            print(df_raw)
             print('')
+
+    if args.end_date:
+        ee = pd.to_datetime(args.end_date)
+        ii = df_raw.index.get_indexer([ee], method='nearest')[0]
+        df = df_raw[:ii+1]
+    else:
+        df = df_raw[:-1]
+    if args.verbose:
+        timestr = df.index[-1].strftime('%Y%m%d')
+        print(f'Data to {args.end_date} -> {timestr} ...')
 
     d = df.index                       # Date
     s = df['Stock'].values             # Stock
@@ -110,13 +117,9 @@ def imgen(args):
 
     # Start when market cap > 0, up to month 135
     ii = np.sum(mc == 0)
-    # ix = np.expand_dims(np.log10(s2f2[ii:136]), 1)
-    # iy = np.log10(mc[ii:136])
     ix = np.expand_dims(np.log10(s2f2[ii:]), 1)
     iy = np.log10(mc[ii:])
 
-    if args.verbose:
-        print('Data fitting ...')
     linreg = LinearRegression().fit(ix, iy)
     # ransac = RANSACRegressor().fit(ix, iy)
 
@@ -132,8 +135,6 @@ def imgen(args):
         matplotlib.patheffects.Normal()
     ]
 
-    if args.verbose:
-        print('Plotting ...')
     fig = matplotlib.pyplot.figure()
     ax = matplotlib.pyplot.axes([0.22, 0.12, 0.73, 0.76])
     ax.tick_params(axis='y')
@@ -146,24 +147,21 @@ def imgen(args):
     # From PlanB's article published on 4/27/2020
     ax.plot(58.3, 10.08e12, '.', markersize=20, color='#C29E29', label='Gold (SF58.3, 10.08T)')
     ax.plot(33.3, 561e9, '.', markersize=20, color='#999999', label='Silver (SF33.3, 561B)')
-    ax.text(48, 8e12, 'Gold (SF58.3, 10.08T)', fontsize=8, ha='right')
-    ax.text(27, 5e11, 'Silver (SF33.3, 561B)', fontsize=8, ha='right')
+    text = ax.text(48, 8e12, 'Gold (SF58.3, 10.08T)', fontsize=8, ha='right')
+    text.set_path_effects(path_effects)
+    text = ax.text(27, 5e11, 'Silver (SF33.3, 561B)', fontsize=8, ha='right')
+    text.set_path_effects(path_effects)
     if args.verbose > 1:
         print(f'len(d) = {len(d)}')
     for i in range(len(hh)):
         b = hh[i]
-        if i < len(hh) - 1:
-            e = hh[i + 1]
-            x = s2f2[b:e]
-            y = mc[b:e]
-            w = np.array(df.index[b:e] - df.index[b], dtype=float) / 86400e9 / 365 * 12
-        else:
-            x = s2f2[b:]
-            y = mc[b:]
-            w = np.array(df.index[b:] - df.index[b], dtype=float) / 86400e9 / 365 * 12
+        e = hh[i + 1] if i < len(hh) - 1 else len(d) + 1
+        x = s2f2[b:e]
+        y = mc[b:e]
+        w = np.array(df.index[b:e] - df.index[b], dtype=float) / 86400e9 / 365 * 12
         if args.verbose > 1:
             print(f'w = {w}')
-        label = 'Genesis' if i == 0 else 'Halving {}'.format(i)
+        label = 'Genesis' if i == 0 else f'Halving {i}'
         hs = ax.scatter(x, y, c=w, vmin=0, vmax=48, cmap='rainbow_r', s=3, label=label)
     loc = []
     for i in range(3, 15):
@@ -179,8 +177,9 @@ def imgen(args):
     for i in range(0, 49, 6):
         loc.append(i)
     cax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(loc))
-    cax.set_title('Months After Halving')
-    for i, p in enumerate(((2.2, 2e6), (11, 2e8), (25, 2.2e9), (52, 4e10))):
+    text = cax.set_title('Months After Halving')
+    text.set_path_effects(path_effects)
+    for i, p in enumerate(((2.2, 2e6), (11, 2e8), (25, 2.3e9), (51, 4e10))):
         label = 'Genesis' if i == 0 else 'Halving {}'.format(i)
         text = ax.text(p[0], p[1], label, fontsize=8)
         text.set_path_effects(path_effects)
@@ -192,14 +191,16 @@ def imgen(args):
         matplotlib.patheffects.Normal()
     ])
 
-    #timestr = datetime.date.today().strftime('%Y%m%d')
+    timestr = time.strftime('%Y-%m-%d', time.localtime())
+    fig.text(0.988, 0.02, f'Created on {timestr}', fontsize=4, ha='right', va='baseline')
+
     timestr = df.index[-1].strftime('%Y%m%d')
     folder = os.path.expanduser('~/Downloads/s2f')
     if not os.path.exists(folder):
         os.makedirs(folder)
-    filename = '{}/s2f-{}.png'.format(folder, timestr)
+    filename = f'{folder}/s2f-{timestr}.png'
     if args.verbose:
-        print('Saving image to {} ...'.format(filename))
+        print(f'Saving{filename} ...')
     fig.savefig(filename, facecolor='k', dpi=320)
     matplotlib.pyplot.close(fig)
 
@@ -232,7 +233,7 @@ if __name__ == "__main__":
         PROG -v             runs in verbose mode
         PROG -c 1           produces one calendar year of images until the latest end of month
         PROG -e 20211231    generates an image ending 2021/12/31
-    '''.replace('PROG', '{}'.format(name))
+    '''.replace('PROG', name)
     epilog = textwrap.dedent('''
         Copyleft 2021 Boonleng Cheong
     ''')
