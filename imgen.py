@@ -206,19 +206,6 @@ def imgen(args):
     fig.savefig(filename, facecolor='k', dpi=320)
     matplotlib.pyplot.close(fig)
 
-<<<<<<< Updated upstream
-=======
-###
-
-def test():
-    import data
-
-    def show_table(file):
-        values, _ = data.history_from_csv(file)
-        k = 200
-        print(values[k:k+14])
->>>>>>> Stashed changes
-
 def test():
     print('Test')
 
