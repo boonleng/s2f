@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 '''
 imgen.py
@@ -13,6 +13,13 @@ Boonleng
 @author: Boonleng Cheong
 
   Updates:
+
+  1.1.2   - 2/18/2022
+          - Single load for multiple images
+          - Added --version for version check
+
+  1.1.1   - 2/17/2022
+          - Updated notebooks
 
   1.1     - 2/16/2022
           - Added -c/--calendar option
@@ -203,14 +210,17 @@ def imgen(args):
     fig.savefig(filename, facecolor='k', dpi=320)
     matplotlib.pyplot.close(fig)
 
-def show_table(file):
-    values, _ = data.history_from_csv(file)
-    k = 200
-    print(values[k:k+14])
 
-def test(args):
-
+def test():
     print('Test')
+
+    import data
+
+    def show_table(file):
+        values, _ = data.history_from_csv(file)
+        k = 200
+        print(values[k:k+14])
+
     file = 'blob/btc-market-cap-20211102.csv'
     show_table(file)
 
@@ -250,9 +260,9 @@ if __name__ == "__main__":
         grab.coinmetrics(verbose=args.verbose)
 
     if args.test:
-        test(args)
+        test()
     elif args.version:
-        print(__version__)
+        print(f'{name} {__version__}')
     else:
         if args.calendar:
             import datetime
