@@ -6,6 +6,12 @@ import pandas as pd
 
 import grab
 
+halving_dates = [pd.to_datetime('2009-01-03'),
+        pd.to_datetime('2012-11-28'),
+        pd.to_datetime('2016-07-09'),
+        pd.to_datetime('2020-05-11'),
+        pd.to_datetime('2024-03-01')]
+
 def history_from_csv(filename, startrow=0):
     data = []
     header = []

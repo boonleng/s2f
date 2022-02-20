@@ -14,12 +14,12 @@ Boonleng
 
   Updates:
 
-  1.1.2   - 2/18/2022
+  1.1.2   - 2/19/2022
           - Single load for multiple images
           - Added --version for version check
 
   1.1.1   - 2/17/2022
-          - Updated notebooks
+          - Updated notebook Data Visualization
 
   1.1     - 2/16/2022
           - Added -c/--calendar option
@@ -47,6 +47,9 @@ if sys.version_info < __min_python__:
     version_str = '.'.join(str(k) for k in __min_python__)
     sys.exit(f'Python {version_str} or later is required.\n')
 
+# Silence this warning for now
+os.environ['TK_SILENCE_DEPRECATION'] = '1'
+
 import argparse
 import textwrap
 
@@ -63,34 +66,23 @@ def imgen(args):
     import matplotlib.pyplot
     import matplotlib.patheffects
 
-    from sklearn.linear_model import LinearRegression, RANSACRegressor
+    # from sklearn.linear_model import LinearRegression, RANSACRegressor
+    from sklearn.linear_model import LinearRegression
 
     import data
     import style
 
     np.set_printoptions(precision=1)
 
-    style.use_dark_theme()
-
-    def v2str(v):
-        d = int(np.maximum(-np.log10(v), 0))
-        return ('{{:,.{:d}f}}'.format(d)).format(v)
-
-    xfmt = matplotlib.ticker.FuncFormatter(lambda x, pos: v2str(x))
-    yfmt = matplotlib.ticker.FuncFormatter(lambda y, pos: '$' + v2str(y))
-
-    # years = matplotlib.dates.YearLocator()             # every year
-    # months = matplotlib.dates.MonthLocator()           # every month
-    # years_fmt = matplotlib.dates.DateFormatter('%Y')
-
     global df_raw
     if df_raw is None:
         if args.verbose:
             print('Reading CSV data ...')
         df_raw = data.read(rss='M')
-        with pd.option_context('display.max_rows', 6):
-            print(df_raw)
-            print('')
+        if args.verbose > 1:
+            with pd.option_context('display.max_rows', 6):
+                print(df_raw)
+                print('')
 
     if args.end_date:
         ee = pd.to_datetime(args.end_date)
@@ -109,15 +101,7 @@ def imgen(args):
     mc = df['Market Cap'].values       # Market Capitalization (USD)
     s2f = s / f                        # Stock-to-Flow Ratio
     s2f2 = s / f2                      # Stock-to-Flow Ratio from table entries
-    hh = [
-        0,
-        df.index.get_indexer([pd.to_datetime('2012-11-28')], method='backfill')[0],
-        df.index.get_indexer([pd.to_datetime('2016-07-09')], method='backfill')[0],
-        df.index.get_indexer([pd.to_datetime('2020-05-11')], method='backfill')[0],
-        df.index.get_indexer([pd.to_datetime('2024-03-01')], method='backfill')[0],
-    ]
-    while hh[-1] == -1:
-        hh = hh[:-1]
+    hh = [df.index.get_indexer([x], method='backfill')[0] for x in data.halving_dates]
     if args.verbose > 1:
         print(f'hh = {hh}')
 
@@ -131,10 +115,19 @@ def imgen(args):
 
     mx = np.expand_dims(np.logspace(-1, 2.5), 1)
     my = 10 ** linreg.predict(np.log10(mx))
-    # print('Linear Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(linreg.coef_[0], linreg.intercept_))
-
     # my2 = 10 ** ransac.predict(np.log10(mx))
-    # print('RANSAC Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(ransac.estimator_.coef_[0], ransac.estimator_.intercept_))
+    if args.verbose > 1:
+        print('Linear Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(linreg.coef_[0], linreg.intercept_))
+        # print('RANSAC Regression: log10(y) = {:.4f} * log10(S2F) + {:.4f}'.format(ransac.estimator_.coef_[0], ransac.estimator_.intercept_))
+
+    style.use_dark_theme()
+
+    def v2str(v):
+        d = int(np.maximum(-np.log10(v), 0))
+        return ('{{:,.{:d}f}}'.format(d)).format(v)
+
+    xfmt = matplotlib.ticker.FuncFormatter(lambda x, pos: v2str(x))
+    yfmt = matplotlib.ticker.FuncFormatter(lambda y, pos: '$' + v2str(y))
 
     path_effects = [
         matplotlib.patheffects.Stroke(linewidth=1.5, foreground=(0.0, 0.0, 0.0, 0.6)),
@@ -150,7 +143,8 @@ def imgen(args):
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.grid()
-    # From PlanB's article published on 4/27/2020
+    # From PlanB's S2FX article published on 4/27/2020
+    # https://medium.com/@100trillionUSD/bitcoin-stock-to-flow-cross-asset-model-50d260feed12
     ax.plot(58.3, 10.08e12, '.', markersize=20, color='#C29E29', label='Gold (SF58.3, 10.08T)')
     ax.plot(33.3, 561e9, '.', markersize=20, color='#999999', label='Silver (SF33.3, 561B)')
     text = ax.text(48, 8e12, 'Gold (SF58.3, 10.08T)', fontsize=8, ha='right')
@@ -161,6 +155,8 @@ def imgen(args):
         print(f'len(d) = {len(d)}')
     for i in range(len(hh)):
         b = hh[i]
+        if b < 0:
+            break
         e = hh[i + 1] if i < len(hh) - 1 else len(d) + 1
         x = s2f2[b:e]
         y = mc[b:e]
@@ -206,10 +202,22 @@ def imgen(args):
         os.makedirs(folder)
     filename = f'{folder}/s2f-{timestr}.png'
     if args.verbose:
-        print(f'Saving{filename} ...')
+        print(f'Saving {filename} ...')
     fig.savefig(filename, facecolor='k', dpi=320)
     matplotlib.pyplot.close(fig)
 
+<<<<<<< Updated upstream
+=======
+###
+
+def test():
+    import data
+
+    def show_table(file):
+        values, _ = data.history_from_csv(file)
+        k = 200
+        print(values[k:k+14])
+>>>>>>> Stashed changes
 
 def test():
     print('Test')
