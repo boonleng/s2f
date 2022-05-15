@@ -203,7 +203,8 @@ def imgen(args):
     filename = f'{folder}/s2f-{timestr}.png'
     if args.verbose:
         print(f'Saving {filename} ...')
-    fig.savefig(filename, facecolor='k', dpi=320)
+    dpi = 640 if args.retina else 320
+    fig.savefig(filename, facecolor='k', dpi=dpi)
     matplotlib.pyplot.close(fig)
 
 def test():
@@ -245,6 +246,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--calendar', type=int, default=0, help='produces N calendar year of images')
     parser.add_argument('-d', '--download', action='store_true', default=False, help='downloads new data')
     parser.add_argument('-e', '--end-date', default=None, help='sets the end day')
+    parser.add_argument('-r', '--retina', action='store_true', help='generates retina HiDPI images')
     parser.add_argument('-t', '--test', action='store_true', default=False, help='runs a test')
     parser.add_argument('-v', '--verbose', action='count', default=0, help='increases verbosity')
     parser.add_argument('--version', action='store_true', help='shows version')
