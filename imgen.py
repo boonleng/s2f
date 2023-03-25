@@ -88,6 +88,10 @@ def imgen(args):
         ee = pd.to_datetime(args.end_date)
         ii = df_raw.index.get_indexer([ee], method='nearest')[0]
         df = df_raw[:ii+1]
+        # Remove the last row if it is invalid
+        while df['Stock'].values[-1] == 0 or df['Norm Mean Flow'].values[-1] < 0:
+            print(f'Removing row {df.index[-1]} ...')
+            df = df[:-1]
     else:
         df = df_raw[:-1]
     if args.verbose:
